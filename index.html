@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ratio Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+    }
+    h1 {
+      color: #333;
+    }
+    #game-container {
+      margin-top: 20px;
+    }
+    .basket {
+      width: 120px;
+      height: 100px;
+      background-color: brown;
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 10px;
+    }
+    .fruit {
+      width: 50px;
+      height: 50px;
+      position: absolute;
+      cursor: grab;
+    }
+    .apple {
+      background-color: red;
+      border-radius: 50%;
+    }
+    .banana {
+      background-color: yellow;
+      border-radius: 50%;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Ratio Game</h1>
+  <p>Drag the correct number of apples and bananas into the basket to match the target ratio.</p>
+  <h2 id="target-ratio"></h2>
+  <div id="game-container"></div>
+  <div class="basket" id="basket"></div>
+  <div id="status"></div>
+
+  <script>
+    let targetRatios = [[3, 2], [4, 1], [5, 3]];
+    let currentRatio = targetRatios[Math.floor(Math.random() * targetRatios.length)];
+    let applesNeeded = currentRatio[0];
+    let bananasNeeded = currentRatio[1];
+
+    document.getElementById("target-ratio").innerText = `Target Ratio: ${applesNeeded}:${bananasNeeded}`;
+
+    let basket = document.getElementById("basket");
+    let appleCount = 0;
+    let bananaCount = 0;
+
+    function createFruit(type) {
+      let fruit = document.createElement("div");
+      fruit.classList.add("fruit", type);
+      fruit.style.left = Math.random() * 80 + "%";
+      fruit.style.top = Math.random() * 300 + "px";
+      document.body.appendChild(fruit);
+
+      fruit.onmousedown = function (event) {
+        let shiftX = event.clientX - fruit.getBoundingClientRect().left;
+        let shiftY = event.clientY - fruit.getBoundingClientRect().top;
+
+        function moveAt(pageX, pageY) {
+          fruit.style.left = pageX - shiftX + "px";
+          fruit.style.top = pageY - shiftY + "px";
+        }
+
+        function onMouseMove(event) {
+          moveAt(event.pageX, event.pageY);
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+
+        fruit.onmouseup = function () {
+          document.removeEventListener("mousemove", onMouseMove);
+          fruit.onmouseup = null;
+
+          let basketRect = basket.getBoundingClientRect();
+          let fruitRect = fruit.getBoundingClientRect();
+
+          if (
+            fruitRect.left > basketRect.left &&
+            fruitRect.right < basketRect.right &&
+            fruitRect.top > basketRect.top &&
+            fruitRect.bottom < basketRect.bottom
+          ) {
+            if (type === "apple") appleCount++;
+            if (type === "banana") bananaCount++;
+            fruit.style.display = "none";
+          }
+
+          if (appleCount === applesNeeded && bananaCount === bananasNeeded) {
+            document.getElementById("status").innerText = "Correct Ratio! 🎉";
+            setTimeout(resetGame, 2000);
+          } else {
+            document.getElementById("status").innerText = "Keep Going!";
+          }
+        };
+      };
+
+      fruit.ondragstart = function () {
+        return false;
+      };
+    }
+
+    function resetGame() {
+      appleCount = 0;
+      bananaCount = 0;
+      document.getElementById("status").innerText = "";
+      document.querySelectorAll(".fruit").forEach(fruit => fruit.remove());
+
+      currentRatio = targetRatios[Math.floor(Math.random() * targetRatios.length)];
+      applesNeeded = currentRatio[0];
+      bananasNeeded = currentRatio[1];
+
+      document.getElementById("target-ratio").innerText = `Target Ratio: ${applesNeeded}:${bananasNeeded}`;
+
+      for (let i = 0; i < applesNeeded; i++) createFruit("apple");
+      for (let i = 0; i < bananasNeeded; i++) createFruit("banana");
+    }
+
+    for (let i = 0; i < applesNeeded; i++) createFruit("apple");
+    for (let i = 0; i < bananasNeeded; i++) createFruit("banana");
+  </script>
+</body>
+</html>
