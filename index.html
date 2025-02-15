@@ -18,7 +18,7 @@
       color: #333;
     }
     #fraction-container {
-      font-size: 30px;
+      font-size: 32px;
       margin-top: 20px;
       line-height: 1.2;
     }
@@ -31,7 +31,7 @@
     }
     .fraction .line {
       display: block;
-      width: 80px;
+      width: 100px;
       height: 2px;
       background-color: black;
       margin: 5px auto;
@@ -116,19 +116,16 @@
     const fractionDenominator = document.getElementById('fraction-denominator');
 
     function generateNewRatio() {
-      let num1 = Math.floor(Math.random() * 10) + 1;
-      let num2 = Math.floor(Math.random() * 10) + 1;
-
-      let appleCount = num1 * 10;
-      let bananaCount = num2 * 10;
+      let appleCount = (Math.floor(Math.random() * 9) + 2) * 5;
+      let bananaCount = (Math.floor(Math.random() * 9) + 2) * 5;
 
       targetAppleCount = 0;
       targetBananaCount = 0;
       targetBasket.innerHTML = "";
       status.innerText = `Current: 0 🍎, 0 🍌`;
 
-      fractionNumerator.innerText = "🍎".repeat(appleCount);
-      fractionDenominator.innerText = "🍌".repeat(bananaCount);
+      fractionNumerator.innerText = appleCount + " 🍎";
+      fractionDenominator.innerText = bananaCount + " 🍌";
 
       return { apples: appleCount, bananas: bananaCount };
     }
