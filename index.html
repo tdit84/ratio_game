@@ -57,16 +57,10 @@
       margin-top: 20px;
       font-weight: bold;
     }
-    .button {
-      display: inline-block;
-      font-size: 20px;
-      padding: 10px 20px;
-      margin: 10px;
-      cursor: pointer;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      background-color: #007BFF;
+    #stars {
+      font-size: 24px;
+      margin-top: 10px;
+      color: gold;
     }
   </style>
 </head>
@@ -75,9 +69,11 @@
   <h1>Ratio Game</h1>
   <p class="instructions">
     Click on the <strong>apple</strong> or <strong>banana</strong> basket to add fruit to the target basket.<br>
-    Your goal is to achieve a **2:3** ratio of 🍎 to 🍌.<br>
+    Your goal is to achieve the **correct reduced ratio** shown below.<br>
     Click on a fruit in the target basket to **remove it** if needed.
   </p>
+
+  <h2 id="target-ratio"></h2>
 
   <div id="game-container">
     <div id="apple-source" class="source-basket">🍎</div>
@@ -86,11 +82,10 @@
   </div>
 
   <div id="status">Current: 0 🍎, 0 🍌</div>
+  <div id="stars">⭐ 0</div>
 
   <script>
-    // Target ratio is 2:3
-    const reducedRatio = { apples: 2, bananas: 3 };
-
+    let starCount = 0;
     let targetAppleCount = 0;
     let targetBananaCount = 0;
 
@@ -98,14 +93,48 @@
     const bananaSource = document.getElementById('banana-source');
     const targetBasket = document.getElementById('target-basket');
     const status = document.getElementById('status');
+    const stars = document.getElementById('stars');
+    const targetRatioDisplay = document.getElementById('target-ratio');
+
+    function getGCD(a, b) {
+      while (b !== 0) {
+        let temp = b;
+        b = a % b;
+        a = temp;
+      }
+      return a;
+    }
+
+    function generateNewRatio() {
+      let num1 = Math.floor(Math.random() * 10) + 1;
+      let num2 = Math.floor(Math.random() * 10) + 1;
+      let gcd = getGCD(num1, num2);
+      let reducedRatio = { apples: num1 / gcd, bananas: num2 / gcd };
+
+      targetAppleCount = 0;
+      targetBananaCount = 0;
+      targetBasket.innerHTML = "";
+      status.innerText = `Current: 0 🍎, 0 🍌`;
+
+      targetRatioDisplay.innerText = `Target Ratio: ${num1}:${num2} (Reduced: ${reducedRatio.apples}:${reducedRatio.bananas})`;
+
+      return reducedRatio;
+    }
+
+    let currentRatio = generateNewRatio();
 
     function updateStatus() {
       status.innerText = `Current: ${targetAppleCount} 🍎, ${targetBananaCount} 🍌`;
       if (
         targetAppleCount > 0 && targetBananaCount > 0 &&
-        (targetAppleCount * reducedRatio.bananas === targetBananaCount * reducedRatio.apples)
+        (targetAppleCount * currentRatio.bananas === targetBananaCount * currentRatio.apples)
       ) {
         status.innerText += " — ✅ Correct Ratio! 🎉";
+        starCount++;
+        stars.innerText = `⭐ ${starCount}`;
+        setTimeout(() => {
+          currentRatio = generateNewRatio();
+        }, 2000);
       }
     }
 
