@@ -33,33 +33,40 @@
       border-radius: 10px;
       background-color: #ddd;
       position: relative;
-    }
-    .source-basket {
-      width: 100px;
-      height: 100px;
-      background-color: #c9a66b;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 50px;
       cursor: pointer;
+      font-size: 40px;
+      width: 120px;
+      height: 120px;
     }
     .target-basket {
-      width: 220px;
-      height: 220px;
+      width: 250px;
+      height: 250px;
       background-color: #8b4513;
+      flex-wrap: wrap;
     }
     .fruit {
       font-size: 40px;
-      position: absolute;
-      cursor: grab;
-      z-index: 1000;
-      user-select: none;
+      margin: 5px;
+      cursor: pointer;
     }
     #status {
       font-size: 22px;
       margin-top: 20px;
       font-weight: bold;
+    }
+    .button {
+      display: inline-block;
+      font-size: 20px;
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      background-color: #007BFF;
     }
   </style>
 </head>
@@ -67,10 +74,9 @@
 
   <h1>Ratio Game</h1>
   <p class="instructions">
-    Drag fruit from the <strong>apple</strong> basket (left) or the <strong>banana</strong> basket (right)
-    into the empty basket below.<br>
-    Your target is: 20 🍎 to 30 🍌 (<em>achieve a 2:3 ratio</em>).<br>
-    If you add too many, simply click a fruit in the target basket to remove it.
+    Click on the <strong>apple</strong> or <strong>banana</strong> basket to add fruit to the target basket.<br>
+    Your goal is to achieve a **2:3** ratio of 🍎 to 🍌.<br>
+    Click on a fruit in the target basket to **remove it** if needed.
   </p>
 
   <div id="game-container">
@@ -82,7 +88,7 @@
   <div id="status">Current: 0 🍎, 0 🍌</div>
 
   <script>
-    const hardTarget = { apples: 20, bananas: 30 };
+    // Target ratio is 2:3
     const reducedRatio = { apples: 2, bananas: 3 };
 
     let targetAppleCount = 0;
@@ -99,55 +105,42 @@
         targetAppleCount > 0 && targetBananaCount > 0 &&
         (targetAppleCount * reducedRatio.bananas === targetBananaCount * reducedRatio.apples)
       ) {
-        status.innerText += " — Correct Ratio! 🎉";
+        status.innerText += " — ✅ Correct Ratio! 🎉";
       }
     }
 
-    function createDraggableFruit(type) {
+    function addFruit(type) {
       const fruit = document.createElement('div');
       fruit.className = 'fruit';
       fruit.innerText = type === 'apple' ? '🍎' : '🍌';
       fruit.dataset.type = type;
-      return fruit;
-    }
-
-    function handleDragStart(e, type) {
-      e.preventDefault();
-      const fruit = createDraggableFruit(type);
-      document.body.appendChild(fruit);
-      fruit.style.left = e.clientX + 'px';
-      fruit.style.top = e.clientY + 'px';
-
-      let offsetX = e.clientX - fruit.getBoundingClientRect().left;
-      let offsetY = e.clientY - fruit.getBoundingClientRect().top;
-
-      function moveAt(pageX, pageY) {
-        fruit.style.left = (pageX - offsetX) + 'px';
-        fruit.style.top = (pageY - offsetY) + 'px';
-      }
-
-      function onMouseMove(e) {
-        moveAt(e.clientX, e.clientY);
-      }
-
-      document.addEventListener('mousemove', onMouseMove);
-
-      function onMouseUp() {
-        document.removeEventListener('mousemove', onMouseMove);
+      fruit.onclick = function () {
+        if (type === 'apple') {
+          targetAppleCount--;
+        } else {
+          targetBananaCount--;
+        }
         fruit.remove();
+        updateStatus();
+      };
+      targetBasket.appendChild(fruit);
+
+      if (type === 'apple') {
+        targetAppleCount++;
+      } else {
+        targetBananaCount++;
       }
 
-      document.addEventListener('mouseup', onMouseUp);
+      updateStatus();
     }
 
-    appleSource.addEventListener('mousedown', function(e) {
-      handleDragStart(e, 'apple');
+    appleSource.addEventListener('click', function () {
+      addFruit('apple');
     });
 
-    bananaSource.addEventListener('mousedown', function(e) {
-      handleDragStart(e, 'banana');
+    bananaSource.addEventListener('click', function () {
+      addFruit('banana');
     });
-
   </script>
 </body>
 </html>
