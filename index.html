@@ -9,40 +9,37 @@
       font-family: Arial, sans-serif;
       text-align: center;
       background-color: #f0f0f0;
+      overflow: hidden;
     }
     h1 {
       color: #333;
     }
     #game-container {
-      margin-top: 20px;
+      margin-top: 10px;
+      position: relative;
+      height: 75vh;
     }
     .basket {
-      width: 120px;
-      height: 100px;
+      width: 150px;
+      height: 120px;
       background-color: brown;
       position: absolute;
-      bottom: 50px;
+      bottom: 5%;
       left: 50%;
       transform: translateX(-50%);
       border-radius: 10px;
+      text-align: center;
+      line-height: 120px;
+      font-size: 50px;
     }
     .fruit {
-      width: 50px;
-      height: 50px;
+      font-size: 50px;
       position: absolute;
       cursor: grab;
     }
-    .apple {
-      background-color: red;
-      border-radius: 50%;
-    }
-    .banana {
-      background-color: yellow;
-      border-radius: 50%;
-    }
     #status {
       margin-top: 20px;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: bold;
     }
   </style>
@@ -53,7 +50,7 @@
   <p>Drag the correct number of apples and bananas into the basket to match the target ratio.</p>
   <h2 id="target-ratio"></h2>
   <div id="game-container"></div>
-  <div class="basket" id="basket"></div>
+  <div class="basket" id="basket">🧺</div>
   <div id="status"></div>
 
   <script>
@@ -70,56 +67,62 @@
 
     function createFruit(type) {
       let fruit = document.createElement("div");
-      fruit.classList.add("fruit", type);
+      fruit.classList.add("fruit");
+      fruit.innerText = type === "apple" ? "🍎" : "🍌";
+      
+      // Place fruits lower on screen to prevent overlap with text
       fruit.style.left = Math.random() * 80 + "%";
-      fruit.style.top = Math.random() * 300 + "px";
+      fruit.style.top = Math.random() * 40 + 50 + "vh";  
       document.body.appendChild(fruit);
 
-      fruit.onmousedown = function (event) {
-        let shiftX = event.clientX - fruit.getBoundingClientRect().left;
-        let shiftY = event.clientY - fruit.getBoundingClientRect().top;
+      let offsetX, offsetY;
 
-        function moveAt(pageX, pageY) {
-          fruit.style.left = pageX - shiftX + "px";
-          fruit.style.top = pageY - shiftY + "px";
+      function startDrag(event) {
+        let touch = event.touches ? event.touches[0] : event;
+        offsetX = touch.clientX - fruit.getBoundingClientRect().left;
+        offsetY = touch.clientY - fruit.getBoundingClientRect().top;
+        event.preventDefault();
+      }
+
+      function moveDrag(event) {
+        let touch = event.touches ? event.touches[0] : event;
+        fruit.style.left = touch.clientX - offsetX + "px";
+        fruit.style.top = touch.clientY - offsetY + "px";
+        event.preventDefault();
+      }
+
+      function endDrag(event) {
+        let basketRect = basket.getBoundingClientRect();
+        let fruitRect = fruit.getBoundingClientRect();
+
+        if (
+          fruitRect.left > basketRect.left &&
+          fruitRect.right < basketRect.right &&
+          fruitRect.top > basketRect.top &&
+          fruitRect.bottom < basketRect.bottom
+        ) {
+          if (type === "apple") appleCount++;
+          if (type === "banana") bananaCount++;
+          fruit.style.display = "none";
         }
 
-        function onMouseMove(event) {
-          moveAt(event.pageX, event.pageY);
+        if (appleCount === applesNeeded && bananaCount === bananasNeeded) {
+          document.getElementById("status").innerText = "Correct Ratio! 🎉";
+          setTimeout(resetGame, 2000);
+        } else {
+          document.getElementById("status").innerText = "Keep Going!";
         }
+      }
 
-        document.addEventListener("mousemove", onMouseMove);
+      // Mouse Events
+      fruit.onmousedown = startDrag;
+      document.addEventListener("mousemove", moveDrag);
+      document.addEventListener("mouseup", endDrag);
 
-        fruit.onmouseup = function () {
-          document.removeEventListener("mousemove", onMouseMove);
-          fruit.onmouseup = null;
-
-          let basketRect = basket.getBoundingClientRect();
-          let fruitRect = fruit.getBoundingClientRect();
-
-          if (
-            fruitRect.left > basketRect.left &&
-            fruitRect.right < basketRect.right &&
-            fruitRect.top > basketRect.top &&
-            fruitRect.bottom < basketRect.bottom
-          ) {
-            if (type === "apple") appleCount++;
-            if (type === "banana") bananaCount++;
-            fruit.style.display = "none";
-          }
-
-          if (appleCount === applesNeeded && bananaCount === bananasNeeded) {
-            document.getElementById("status").innerText = "Correct Ratio! 🎉";
-            setTimeout(resetGame, 2000);
-          } else {
-            document.getElementById("status").innerText = "Keep Going!";
-          }
-        };
-      };
-
-      fruit.ondragstart = function () {
-        return false;
-      };
+      // Touch Events (Mobile Support)
+      fruit.ontouchstart = startDrag;
+      document.addEventListener("touchmove", moveDrag);
+      document.addEventListener("touchend", endDrag);
     }
 
     function resetGame() {
