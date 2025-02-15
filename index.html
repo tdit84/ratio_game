@@ -1,45 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ratio Game</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       background-color: #f0f0f0;
-      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      user-select: none;
     }
     h1 {
+      margin-top: 20px;
       color: #333;
     }
-    #game-container {
-      margin-top: 10px;
-      position: relative;
-      height: 75vh;
+    p.instructions {
+      font-size: 18px;
+      margin: 10px;
     }
-    .basket {
-      width: 150px;
-      height: 120px;
-      background-color: brown;
-      position: absolute;
-      bottom: 5%;
-      left: 50%;
-      transform: translateX(-50%);
+    #game-container {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin: 30px auto;
+      max-width: 800px;
+    }
+    .source-basket, .target-basket {
+      border: 2px solid #555;
       border-radius: 10px;
-      text-align: center;
-      line-height: 120px;
+      background-color: #ddd;
+      position: relative;
+    }
+    .source-basket {
+      width: 100px;
+      height: 100px;
+      background-color: #c9a66b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       font-size: 50px;
+      cursor: pointer;
+    }
+    .target-basket {
+      width: 220px;
+      height: 220px;
+      background-color: #8b4513;
     }
     .fruit {
-      font-size: 50px;
+      font-size: 40px;
       position: absolute;
       cursor: grab;
+      z-index: 1000;
+      user-select: none;
     }
     #status {
-      margin-top: 20px;
       font-size: 22px;
+      margin-top: 20px;
       font-weight: bold;
     }
   </style>
@@ -47,102 +66,88 @@
 <body>
 
   <h1>Ratio Game</h1>
-  <p>Drag the correct number of apples and bananas into the basket to match the target ratio.</p>
-  <h2 id="target-ratio"></h2>
-  <div id="game-container"></div>
-  <div class="basket" id="basket">🧺</div>
-  <div id="status"></div>
+  <p class="instructions">
+    Drag fruit from the <strong>apple</strong> basket (left) or the <strong>banana</strong> basket (right)
+    into the empty basket below.<br>
+    Your target is: 20 🍎 to 30 🍌 (<em>achieve a 2:3 ratio</em>).<br>
+    If you add too many, simply click a fruit in the target basket to remove it.
+  </p>
+
+  <div id="game-container">
+    <div id="apple-source" class="source-basket">🍎</div>
+    <div id="target-basket" class="target-basket"></div>
+    <div id="banana-source" class="source-basket">🍌</div>
+  </div>
+
+  <div id="status">Current: 0 🍎, 0 🍌</div>
 
   <script>
-    let targetRatios = [[3, 2], [4, 1], [5, 3]];
-    let currentRatio = targetRatios[Math.floor(Math.random() * targetRatios.length)];
-    let applesNeeded = currentRatio[0];
-    let bananasNeeded = currentRatio[1];
+    const hardTarget = { apples: 20, bananas: 30 };
+    const reducedRatio = { apples: 2, bananas: 3 };
 
-    document.getElementById("target-ratio").innerText = `Target Ratio: ${applesNeeded}:${bananasNeeded}`;
+    let targetAppleCount = 0;
+    let targetBananaCount = 0;
 
-    let basket = document.getElementById("basket");
-    let appleCount = 0;
-    let bananaCount = 0;
+    const appleSource = document.getElementById('apple-source');
+    const bananaSource = document.getElementById('banana-source');
+    const targetBasket = document.getElementById('target-basket');
+    const status = document.getElementById('status');
 
-    function createFruit(type) {
-      let fruit = document.createElement("div");
-      fruit.classList.add("fruit");
-      fruit.innerText = type === "apple" ? "🍎" : "🍌";
-      
-      // Place fruits lower on screen to prevent overlap with text
-      fruit.style.left = Math.random() * 80 + "%";
-      fruit.style.top = Math.random() * 40 + 50 + "vh";  
+    function updateStatus() {
+      status.innerText = `Current: ${targetAppleCount} 🍎, ${targetBananaCount} 🍌`;
+      if (
+        targetAppleCount > 0 && targetBananaCount > 0 &&
+        (targetAppleCount * reducedRatio.bananas === targetBananaCount * reducedRatio.apples)
+      ) {
+        status.innerText += " — Correct Ratio! 🎉";
+      }
+    }
+
+    function createDraggableFruit(type) {
+      const fruit = document.createElement('div');
+      fruit.className = 'fruit';
+      fruit.innerText = type === 'apple' ? '🍎' : '🍌';
+      fruit.dataset.type = type;
+      return fruit;
+    }
+
+    function handleDragStart(e, type) {
+      e.preventDefault();
+      const fruit = createDraggableFruit(type);
       document.body.appendChild(fruit);
+      fruit.style.left = e.clientX + 'px';
+      fruit.style.top = e.clientY + 'px';
 
-      let offsetX, offsetY;
+      let offsetX = e.clientX - fruit.getBoundingClientRect().left;
+      let offsetY = e.clientY - fruit.getBoundingClientRect().top;
 
-      function startDrag(event) {
-        let touch = event.touches ? event.touches[0] : event;
-        offsetX = touch.clientX - fruit.getBoundingClientRect().left;
-        offsetY = touch.clientY - fruit.getBoundingClientRect().top;
-        event.preventDefault();
+      function moveAt(pageX, pageY) {
+        fruit.style.left = (pageX - offsetX) + 'px';
+        fruit.style.top = (pageY - offsetY) + 'px';
       }
 
-      function moveDrag(event) {
-        let touch = event.touches ? event.touches[0] : event;
-        fruit.style.left = touch.clientX - offsetX + "px";
-        fruit.style.top = touch.clientY - offsetY + "px";
-        event.preventDefault();
+      function onMouseMove(e) {
+        moveAt(e.clientX, e.clientY);
       }
 
-      function endDrag(event) {
-        let basketRect = basket.getBoundingClientRect();
-        let fruitRect = fruit.getBoundingClientRect();
+      document.addEventListener('mousemove', onMouseMove);
 
-        if (
-          fruitRect.left > basketRect.left &&
-          fruitRect.right < basketRect.right &&
-          fruitRect.top > basketRect.top &&
-          fruitRect.bottom < basketRect.bottom
-        ) {
-          if (type === "apple") appleCount++;
-          if (type === "banana") bananaCount++;
-          fruit.style.display = "none";
-        }
-
-        if (appleCount === applesNeeded && bananaCount === bananasNeeded) {
-          document.getElementById("status").innerText = "Correct Ratio! 🎉";
-          setTimeout(resetGame, 2000);
-        } else {
-          document.getElementById("status").innerText = "Keep Going!";
-        }
+      function onMouseUp() {
+        document.removeEventListener('mousemove', onMouseMove);
+        fruit.remove();
       }
 
-      // Mouse Events
-      fruit.onmousedown = startDrag;
-      document.addEventListener("mousemove", moveDrag);
-      document.addEventListener("mouseup", endDrag);
-
-      // Touch Events (Mobile Support)
-      fruit.ontouchstart = startDrag;
-      document.addEventListener("touchmove", moveDrag);
-      document.addEventListener("touchend", endDrag);
+      document.addEventListener('mouseup', onMouseUp);
     }
 
-    function resetGame() {
-      appleCount = 0;
-      bananaCount = 0;
-      document.getElementById("status").innerText = "";
-      document.querySelectorAll(".fruit").forEach(fruit => fruit.remove());
+    appleSource.addEventListener('mousedown', function(e) {
+      handleDragStart(e, 'apple');
+    });
 
-      currentRatio = targetRatios[Math.floor(Math.random() * targetRatios.length)];
-      applesNeeded = currentRatio[0];
-      bananasNeeded = currentRatio[1];
+    bananaSource.addEventListener('mousedown', function(e) {
+      handleDragStart(e, 'banana');
+    });
 
-      document.getElementById("target-ratio").innerText = `Target Ratio: ${applesNeeded}:${bananasNeeded}`;
-
-      for (let i = 0; i < applesNeeded; i++) createFruit("apple");
-      for (let i = 0; i < bananasNeeded; i++) createFruit("banana");
-    }
-
-    for (let i = 0; i < applesNeeded; i++) createFruit("apple");
-    for (let i = 0; i < bananasNeeded; i++) createFruit("banana");
   </script>
 </body>
 </html>
